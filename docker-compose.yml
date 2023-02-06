@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: .
-      target: production
+      target: development
     env_file: .env
     volumes:
       - ./:/home/node/app
