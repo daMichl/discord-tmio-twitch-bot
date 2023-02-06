@@ -1,0 +1,9 @@
+services:
+  app:
+    build:
+      context: .
+      target: production
+    env_file: .env
+    volumes:
+      - ./:/home/node/app
+

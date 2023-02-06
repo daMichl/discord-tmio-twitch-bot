@@ -1,0 +1,30 @@
+{
+  "name": "twitch-activity-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npx tsc --build && node ./build/index.js"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Michael Stadler",
+    "url": "https://mistait.com"
+  },
+  "license": "none",
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@twurple/api": "^5.3.3",
+    "@twurple/auth": "^5.3.3",
+    "@twurple/eventsub-http": "^5.3.4",
+    "axios": "^1.2.4",
+    "axios-rate-limit": "^1.3.0",
+    "discord.js": "^14.7.1",
+    "emittery": "^1.0.1",
+    "tsc": "^2.0.4"
+  }
+}

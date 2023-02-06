@@ -1,0 +1,5 @@
+build
+docker-compose.override.yml
+node_modules
+.idea
+.env
