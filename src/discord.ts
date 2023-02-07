@@ -44,10 +44,18 @@ export default class  {
         //             .setURL(`https://twitch.tv/${twitchEvent.user.name}`)
         //     )
 
+        let streamDescription = Array<String>()
+        if (twitchEvent.stream.title) {
+            streamDescription.push(twitchEvent.stream.title)
+        }
+        if (twitchEvent.stream.gameName) {
+            streamDescription.push(twitchEvent.stream.gameName)
+        }
+
         await this.message(
             twitchEvent.user.id,
             {
-                embeds: [ await this.getEmbed(twitchEvent.user.displayName, true, twitchEvent.stream.title, twitchEvent.stream.startDate ?? new Date()) ],
+                embeds: [ await this.getEmbed(twitchEvent.user.displayName, true, streamDescription.join("\n"), twitchEvent.stream.startDate ?? new Date()) ],
                 //components: [ row ]
             },
             true
