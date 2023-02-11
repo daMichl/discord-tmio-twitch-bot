@@ -1,14 +1,7 @@
-import {
-    EmbedBuilder,
-    Colors,
-    ActionRowBuilder,
-    ButtonBuilder,
-    MessagePayload,
-    Client,
-    GatewayIntentBits,
-    ButtonStyle, Channel, TextBasedChannel, Message
-} from 'discord.js'
-import {OfflineEvent, OnlineEvent} from "./twitch.js";
+import {ButtonStyle, Channel, Client, Colors, EmbedBuilder, GatewayIntentBits, Message} from 'discord.js'
+import {OfflineEvent, OnlineEvent, UpdateEvent} from "./twitch.js";
+import {HelixGame} from "@twurple/api";
+import {rawDataSymbol} from "@twurple/common";
 
 
 // Create a new client instance
@@ -24,7 +17,8 @@ type UserMessageReferenceMap = Map<TwitchUserId, MessageReference>;
 interface MessageReference {
     message: Message,
     isOnline: boolean,
-    lastChange: Number
+    lastChange: Number,
+    startDate: Date
 }
 
 export default class  {
@@ -44,21 +38,16 @@ export default class  {
         //             .setURL(`https://twitch.tv/${twitchEvent.user.name}`)
         //     )
 
-        let streamDescription = Array<String>()
-        if (twitchEvent.stream.title) {
-            streamDescription.push(twitchEvent.stream.title)
-        }
-        if (twitchEvent.stream.gameName) {
-            streamDescription.push(twitchEvent.stream.gameName)
-        }
+
 
         await this.message(
             twitchEvent.user.id,
             {
-                embeds: [ await this.getEmbed(twitchEvent.user.displayName, true, streamDescription.join("\n"), twitchEvent.stream.startDate ?? new Date()) ],
+                embeds: [ await this.getEmbed(twitchEvent.user.displayName, true, this.generateDescription(twitchEvent.stream.title, twitchEvent.stream.gameName), twitchEvent.stream.startDate ?? new Date()) ],
                 //components: [ row ]
             },
-            true
+            true,
+            twitchEvent.stream.startDate
         )
     }
 
@@ -71,6 +60,19 @@ export default class  {
             },
             false
         )
+    }
+    async update(twitchEvent: UpdateEvent) {
+        const messageReference = this.userMessageReferences.get(twitchEvent.broadcasterId)
+        if (messageReference) {
+            await this.message(
+                twitchEvent.broadcasterId,
+                {
+                    embeds: [ await this.getEmbed(twitchEvent.broadcasterDisplayName, true, this.generateDescription(twitchEvent.streamTitle, await twitchEvent.getGame()), messageReference.startDate) ],
+                    //components: [ row ]
+                },
+                true
+            )
+        }
     }
 
     async delete(twitchUserId: TwitchUserId) {
@@ -101,7 +103,7 @@ export default class  {
      * if isOnline is true: the old message related to the twitchUserId gets deleted (if some already exists)
      * if isOnline is false: if an old message related to the twitchUserId exists it just gets updated
      */
-    private async message(twitchUserId: TwitchUserId, messageOptions: any, isOnline: boolean = false) {
+    private async message(twitchUserId: TwitchUserId, messageOptions: any, goesOnline: boolean = false, startDate?: Date) {
         const channel: Channel | undefined = discordClient.channels.cache.get(process.env.DISCORD_CHANNEL_ID ?? '');
         if (!channel) {
             console.log('channel', process.env.DISCORD_CHANNEL_ID, "could not be found")
@@ -109,24 +111,33 @@ export default class  {
             process.exit(1)
         }
 
+        let wasOnlineBefore = false;
+        const messageReference = this.userMessageReferences.get(twitchUserId)
+        if (messageReference) {
+            wasOnlineBefore = true;
+        }
+
         if (channel.isTextBased()) {
-            if (isOnline) {
+            if (goesOnline && !wasOnlineBefore) {
                 await this.delete(twitchUserId) //delete any existing message
             }
 
-            const messageReference = this.userMessageReferences.get(twitchUserId)
-            if (messageReference) {
+            //just recheck if the referenced is available...
+            // this.delete up there possibly deletes the object from memory.
+            // after that messageReference could be undefined
+            if (this.userMessageReferences.has(twitchUserId) && messageReference) {
                 await messageReference.message.edit(messageOptions)
 
-                messageReference.isOnline = isOnline
+                messageReference.isOnline = goesOnline
                 messageReference.lastChange = Date.now()
             } else {
                 const message = await channel.send(messageOptions)
 
                 this.userMessageReferences.set(twitchUserId, {
                     message,
-                    isOnline,
-                    lastChange: Date.now()
+                    isOnline: goesOnline,
+                    lastChange: Date.now(),
+                    startDate: startDate ?? new Date()
                 })
             }
         } else {
@@ -148,5 +159,21 @@ export default class  {
         embedBuilder.setURL(`https://twitch.tv/${twitchUserName.toLowerCase()}`)
 
         return embedBuilder
+    }
+
+    private generateDescription(title: string | undefined | null, game: string | undefined | null | HelixGame): string {
+        if (game instanceof HelixGame) {
+            game = game.name;
+        }
+
+        let streamDescription = Array<String>()
+        if (title) {
+            streamDescription.push(title)
+        }
+        if (game) {
+            streamDescription.push(game)
+        }
+
+        return streamDescription.join("\n")
     }
 }

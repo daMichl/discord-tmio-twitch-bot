@@ -12,6 +12,8 @@ twitch.streamEvents.on('offline', event => discord.offline(event))
 //deletes already posted discord event messages for members that where removed from the club
 twitch.streamEvents.on('unsubscribed', event => discord.delete(event.user.id))
 
+twitch.streamEvents.on('update', event => discord.update(event))
+
 //register twitch users and set the function to be also called in a 1-hour interval
 registerTwitchUsers()
 setInterval(registerTwitchUsers, 3600000); //every hour

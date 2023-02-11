@@ -1,7 +1,9 @@
 import {ClientCredentialsAuthProvider} from '@twurple/auth';
-import {ApiClient, HelixStream, HelixUser} from '@twurple/api';
+import {ApiClient, HelixEventSubSubscription, HelixStream, HelixUser} from '@twurple/api';
 import Emittery from "emittery";
 import {EventSubHttpListener, ReverseProxyAdapter} from "@twurple/eventsub-http";
+import {EventSubChannelUpdateEvent} from "@twurple/eventsub-base/lib/events/EventSubChannelUpdateEvent";
+import {EventSubSubscription} from "@twurple/eventsub-base/lib/subscriptions/EventSubSubscription";
 
 const clientId = process.env.TWITCH_CLIENT_ID ?? '';
 const clientSecret = process.env.TWITCH_CLIENT_SECRET ?? '';
@@ -28,19 +30,25 @@ export interface UnsubscribedEvent {
     user: HelixUser
 }
 
+type TwitchUserId = string
+
 export interface OfflineEvent extends UnsubscribedEvent {}
 
 export interface OnlineEvent extends OfflineEvent{
     stream: HelixStream
 }
 
-export default class Twitch {
+export interface UpdateEvent extends EventSubChannelUpdateEvent {}
 
+export default class Twitch {
     public streamEvents = new Emittery<{
         online: OnlineEvent,
         offline: OfflineEvent,
         unsubscribed: UnsubscribedEvent
+        update: UpdateEvent
     }>();
+
+    private channelUpdateEventReferences = new Map<TwitchUserId, EventSubSubscription>()
 
     /**
      * use isInit = true for the first subscription process, this also sends events for already streaming users...
@@ -111,7 +119,6 @@ export default class Twitch {
                             hasActiveOfflineSubscription = true
                             break
                     }
-
                 }
 
                 if (hasActiveOnlineSubscription && hasActiveOfflineSubscription) {
@@ -142,15 +149,36 @@ export default class Twitch {
         await Promise.all(subscriptionPromises)
     }
 
-    private eventHandler(broadcaster: HelixUser, stream: HelixStream|null = null, unsubscribe: boolean = false) {
+    private async manageUpdateEventSubscription(helixUser: HelixUser, unsubscribe: boolean = false) {
+        const updateEventReference = this.channelUpdateEventReferences.get(helixUser.id)
+        if (updateEventReference) {
+            if (unsubscribe) {
+                await updateEventReference.stop()
+                this.channelUpdateEventReferences.delete(helixUser.id)
+            }
+
+            return;
+        }
+
+        this.channelUpdateEventReferences.set(
+            helixUser.id,
+            await listener.subscribeToChannelUpdateEvents(helixUser, async (updateEvent) => {
+                await this.streamEvents.emit('update', updateEvent)
+            })
+        )
+    }
+
+    private async eventHandler(broadcaster: HelixUser, stream: HelixStream|null = null, unsubscribe: boolean = false) {
         if (!stream) {
             if (unsubscribe) {
+                await this.manageUpdateEventSubscription(broadcaster, true)
                 return this.streamEvents.emit('unsubscribed', {
                     date: new Date,
                     user: broadcaster
                 })
             }
 
+            await this.manageUpdateEventSubscription(broadcaster, true)
             return this.streamEvents.emit('offline', {
                 date: new Date,
                 user: broadcaster
@@ -158,10 +186,11 @@ export default class Twitch {
 
         }
 
-        return this.streamEvents.emit('online', {
+        await this.streamEvents.emit('online', {
             date: stream.startDate,
             user: broadcaster,
             stream
         })
+        return this.manageUpdateEventSubscription(broadcaster)
     }
 }
