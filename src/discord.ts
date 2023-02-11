@@ -103,7 +103,7 @@ export default class  {
      * if isOnline is true: the old message related to the twitchUserId gets deleted (if some already exists)
      * if isOnline is false: if an old message related to the twitchUserId exists it just gets updated
      */
-    private async message(twitchUserId: TwitchUserId, messageOptions: any, goesOnline: boolean = false, startDate?: Date) {
+    private async message(twitchUserId: TwitchUserId, messageOptions: any, isOnline: boolean = false, startDate?: Date) {
         const channel: Channel | undefined = discordClient.channels.cache.get(process.env.DISCORD_CHANNEL_ID ?? '');
         if (!channel) {
             console.log('channel', process.env.DISCORD_CHANNEL_ID, "could not be found")
@@ -114,11 +114,11 @@ export default class  {
         let wasOnlineBefore = false;
         const messageReference = this.userMessageReferences.get(twitchUserId)
         if (messageReference) {
-            wasOnlineBefore = true;
+            wasOnlineBefore = messageReference.isOnline;
         }
 
         if (channel.isTextBased()) {
-            if (goesOnline && !wasOnlineBefore) {
+            if (isOnline && !wasOnlineBefore) {
                 await this.delete(twitchUserId) //delete any existing message
             }
 
@@ -128,14 +128,14 @@ export default class  {
             if (this.userMessageReferences.has(twitchUserId) && messageReference) {
                 await messageReference.message.edit(messageOptions)
 
-                messageReference.isOnline = goesOnline
+                messageReference.isOnline = isOnline
                 messageReference.lastChange = Date.now()
             } else {
                 const message = await channel.send(messageOptions)
 
                 this.userMessageReferences.set(twitchUserId, {
                     message,
-                    isOnline: goesOnline,
+                    isOnline,
                     lastChange: Date.now(),
                     startDate: startDate ?? new Date()
                 })
