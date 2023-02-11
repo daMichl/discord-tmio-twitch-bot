@@ -60,14 +60,16 @@ export default class Twitch {
 
         if (isInit) {
             for (const user of users) {
-                const stream = await user.getStream()
-                if (stream) {
-                    console.log(`user already online>  ${user.displayName}> trigger online event`)
+                if (!this.isDevTest(user)) {
+                    const stream = await user.getStream()
+                    if (stream) {
+                        console.log(`user already online>  ${user.displayName}> trigger online event`)
 
-                    await this.eventHandler(
-                        user,
-                        stream
-                    )
+                        await this.eventHandler(
+                            user,
+                            stream
+                        )
+                    }
                 }
             }
         }
@@ -169,9 +171,7 @@ export default class Twitch {
     }
 
     private async eventHandler(broadcaster: HelixUser, stream: HelixStream|null = null, unsubscribe: boolean = false) {
-        const ignoreEvents = process.env.ENVIRONMENT === 'production' && broadcaster.description.includes('DevTest')
-
-        if (!ignoreEvents) {
+        if (!this.isDevTest(broadcaster)) {
             if (!stream) {
                 if (unsubscribe) {
                     await this.manageUpdateEventSubscription(broadcaster, true)
@@ -196,5 +196,9 @@ export default class Twitch {
             })
             return this.manageUpdateEventSubscription(broadcaster)
         }
+    }
+
+    private isDevTest(broadcaster: HelixUser) {
+        return process.env.ENVIRONMENT === 'production' && broadcaster.description.includes('DevTest')
     }
 }
