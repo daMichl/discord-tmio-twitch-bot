@@ -169,28 +169,32 @@ export default class Twitch {
     }
 
     private async eventHandler(broadcaster: HelixUser, stream: HelixStream|null = null, unsubscribe: boolean = false) {
-        if (!stream) {
-            if (unsubscribe) {
+        const ignoreEvents = process.env.ENVIRONMENT === 'production' && broadcaster.description.includes('DevTest')
+
+        if (!ignoreEvents) {
+            if (!stream) {
+                if (unsubscribe) {
+                    await this.manageUpdateEventSubscription(broadcaster, true)
+                    return this.streamEvents.emit('unsubscribed', {
+                        date: new Date,
+                        user: broadcaster
+                    })
+                }
+
                 await this.manageUpdateEventSubscription(broadcaster, true)
-                return this.streamEvents.emit('unsubscribed', {
+                return this.streamEvents.emit('offline', {
                     date: new Date,
                     user: broadcaster
                 })
+
             }
 
-            await this.manageUpdateEventSubscription(broadcaster, true)
-            return this.streamEvents.emit('offline', {
-                date: new Date,
-                user: broadcaster
+            await this.streamEvents.emit('online', {
+                date: stream.startDate,
+                user: broadcaster,
+                stream
             })
-
+            return this.manageUpdateEventSubscription(broadcaster)
         }
-
-        await this.streamEvents.emit('online', {
-            date: stream.startDate,
-            user: broadcaster,
-            stream
-        })
-        return this.manageUpdateEventSubscription(broadcaster)
     }
 }
