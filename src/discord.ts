@@ -1,7 +1,7 @@
 import {ButtonStyle, Channel, Client, Colors, EmbedBuilder, GatewayIntentBits, Message} from 'discord.js'
 import {OfflineEvent, OnlineEvent, UpdateEvent} from "./twitch.js";
 import {HelixGame} from "@twurple/api";
-import {rawDataSymbol} from "@twurple/common";
+import languageCodes from 'iso-639-1';
 
 
 // Create a new client instance
@@ -43,7 +43,7 @@ export default class  {
         await this.message(
             twitchEvent.user.id,
             {
-                embeds: [ await this.getEmbed(twitchEvent.user.displayName, true, this.generateDescription(twitchEvent.stream.title, twitchEvent.stream.gameName), twitchEvent.stream.startDate ?? new Date()) ],
+                embeds: [ await this.getEmbed(twitchEvent.user.displayName, true, this.generateDescription(twitchEvent.stream.title, twitchEvent.stream.gameName, twitchEvent.stream.language), twitchEvent.stream.startDate ?? new Date()) ],
                 //components: [ row ]
             },
             true,
@@ -67,7 +67,7 @@ export default class  {
             await this.message(
                 twitchEvent.broadcasterId,
                 {
-                    embeds: [ await this.getEmbed(twitchEvent.broadcasterDisplayName, true, this.generateDescription(twitchEvent.streamTitle, await twitchEvent.getGame()), messageReference.startDate) ],
+                    embeds: [ await this.getEmbed(twitchEvent.broadcasterDisplayName, true, this.generateDescription(twitchEvent.streamTitle, await twitchEvent.getGame(), twitchEvent.streamLanguage), messageReference.startDate) ],
                     //components: [ row ]
                 },
                 true
@@ -147,7 +147,7 @@ export default class  {
 
     private async getEmbed(twitchUserName: string, isOnline: boolean = false,  descriptionText: string = '', startDate?: Date) {
         const embedBuilder = new EmbedBuilder()
-            .setTitle(twitchUserName)
+            .setTitle(isOnline ? `${twitchUserName} is streaming` : `${twitchUserName} is offline`)
             .setColor(isOnline ? Colors.Green : Colors.Red)
             .setFooter({text: isOnline ? 'started' : 'ended'})
             .setTimestamp(startDate ?? new Date())
@@ -161,19 +161,26 @@ export default class  {
         return embedBuilder
     }
 
-    private generateDescription(title: string | undefined | null, game: string | undefined | null | HelixGame): string {
+    private generateDescription(title: string | undefined | null, game: string | undefined | null | HelixGame, languageIsoCode: string | undefined | null): string {
         if (game instanceof HelixGame) {
             game = game.name;
         }
 
         let streamDescription = Array<String>()
         if (title) {
-            streamDescription.push(title)
+            streamDescription.push(`📣 ${title}`)
         }
         if (game) {
-            streamDescription.push(game)
+            streamDescription.push(`🕹️ ${game}`)
         }
 
-        return streamDescription.join("\n")
+        if (languageIsoCode) {
+            let language = languageCodes.getName(languageIsoCode)
+            if (language) {
+                streamDescription.push(`🗣️ ${language}`)
+            }
+        }
+
+        return '`' + streamDescription.join("`\n`") + '`'
     }
 }
