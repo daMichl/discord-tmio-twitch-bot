@@ -8,17 +8,21 @@ const tmio = rateLimit(axios.create({
     maxRequests: 30, perMilliseconds: 60000
 })
 
-type TwitchUserNames = Array<string>
-
 export default class Trackmania {
-    async getTwitchUsersByClub(clubId: string) {
-        const members = await this.getClubMembers(clubId);
+    async getTwitchUsersByClub(clubIds: string|Array<string>) {
+        const twitchUsers = new Set<string>()
 
-        let twitchUsers = [] as TwitchUserNames;
+        if (typeof clubIds === 'string') {
+            clubIds = [clubIds]
+        }
 
-        for (const member of members) {
-            if (member.player.meta !== undefined && member.player.meta.twitch !== undefined) {
-                twitchUsers.push(member.player.meta.twitch)
+        for (const clubId of clubIds) {
+            const members = await this.getClubMembers(clubId);
+
+            for (const member of members) {
+                if (member.player.meta !== undefined && member.player.meta.twitch !== undefined) {
+                    twitchUsers.add(member.player.meta.twitch)
+                }
             }
         }
 

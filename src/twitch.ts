@@ -4,6 +4,7 @@ import Emittery from "emittery";
 import {EventSubHttpListener, ReverseProxyAdapter} from "@twurple/eventsub-http";
 import {EventSubChannelUpdateEvent} from "@twurple/eventsub-base/lib/events/EventSubChannelUpdateEvent";
 import {EventSubSubscription} from "@twurple/eventsub-base/lib/subscriptions/EventSubSubscription";
+import {isSet} from "util/types";
 
 const clientId = process.env.TWITCH_CLIENT_ID ?? '';
 const clientSecret = process.env.TWITCH_CLIENT_SECRET ?? '';
@@ -53,7 +54,11 @@ export default class Twitch {
     /**
      * use isInit = true for the first subscription process, this also sends events for already streaming users...
      */
-    async subscribe(userNames: Array<string>, isInit: boolean = false) {
+    async subscribe(userNames: Array<string>|Set<string>, isInit: boolean = false) {
+        if (isSet(userNames)) {
+            userNames = [...userNames]
+        }
+
         const users = await apiClient.users.getUsersByNames(userNames)
 
         await this.updateStreamEventSubs(users);
