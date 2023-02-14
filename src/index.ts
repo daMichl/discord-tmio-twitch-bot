@@ -20,7 +20,13 @@ setInterval(registerTwitchUsers, 3600000); //every hour
 
 function registerTwitchUsers(){
     const clubIdEnvString = process.env.TRACKMANIA_CLUB_IDS ?? '0'
+    const additionalTwitchAccountsEnvString = process.env.ADDITIONAL_TWITCH_ACCOUNTS ?? ''
+    const additionalTwitchUserNames = additionalTwitchAccountsEnvString.split('')
     trackmania.getTwitchUsersByClub(clubIdEnvString.split(',')).then(async twitchUserNames => {
+        for (const additionalTwitchUserName of additionalTwitchUserNames) {
+            twitchUserNames.add(additionalTwitchUserName)
+        }
+
         console.log('register/update twitchUsers', twitchUserNames)
         await twitch.subscribe(twitchUserNames, true)
     })
