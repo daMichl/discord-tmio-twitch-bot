@@ -24,7 +24,10 @@ function registerTwitchUsers(){
     const additionalTwitchUserNames = additionalTwitchAccountsEnvString.split(',')
     trackmania.getTwitchUsersByClub(clubIdEnvString.split(',')).then(async twitchUserNames => {
         for (const additionalTwitchUserName of additionalTwitchUserNames) {
-            twitchUserNames.add(additionalTwitchUserName)
+            let trimmedUsername = additionalTwitchUserName.trim()
+            if (trimmedUsername.length > 0) {
+                twitchUserNames.add(trimmedUsername)
+            }
         }
 
         console.log('register/update twitchUsers', twitchUserNames)
