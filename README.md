@@ -1,10 +1,10 @@
 # Discord trackmania.io twitch bot
 
-this piece of software fetches twitch accounts from trackmania 2020 club accounts members and posts + updates messages (in discord) if someone is currently streaming or is ofline.
-if someone is longer offline than 8 hours, the message also gets cleaned up in discord.
-source of the twitch account data is trackmania.io
+Discord bot that announces twitch streams based on data from club members on trackmania.io
 
-**this app needs to be able to be called through http/https from the outside. there will be twitch webhooks registered. (see env WEBHOOK_HOSTNAME)**
+It creates new embed messages if a stream goes online, updates them on changes (title, game, language, offline) and cleans up the offline message after 8 hours. also self cleaning on shutdown. updates twitch accs from configured clubs at trackmania.io every hour.
+
+**this app needs to be able to be called through http/https from the outside. it will register twitch webhooks. (see env WEBHOOK_HOSTNAME)**
 
 for configuration info see .env.example
 
