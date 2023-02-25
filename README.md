@@ -4,6 +4,8 @@ this piece of software fetches twitch accounts from trackmania 2020 club account
 if someone is longer offline than 8 hours, the message also gets cleaned up in discord.
 source of the twitch account data is trackmania.io
 
+**this app needs to be able to be called through http/https from the outside. there will be twitch webhooks registered. (see env WEBHOOK_HOSTNAME)**
+
 for configuration info see .env.example
 
 example discord messages:
