@@ -14,4 +14,4 @@ example discord messages:
 
 ![grafik](https://user-images.githubusercontent.com/4919213/221338113-2a79b06c-7bf1-452e-8b47-2b5b0b19184d.png)
 
-**Disclaimer:** I made this primarily for my own usage. You are free to use it as long you are stating changes. If you have any questions you probably can ask in the folling discord thread: https://discord.com/channels/276076890714800129/1095001339140001792 but keep in mind that I answer on my own time, so response could take a while.
+**Disclaimer:** I made this primarily for my own usage. You are free to use it as long you are stating changes. If you have any questions you probably can ask in the folling discord thread: https://discord.com/channels/276076890714800129/1095006446720143512 but keep in mind that I answer on my own time, so response could take a while.
